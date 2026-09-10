@@ -13,14 +13,16 @@ CREATE TABLE IF NOT EXISTS movies_by_title (
         movie_id UUID, title TEXT,
         release_year INT, genre TEXT,
         rating FLOAT, director TEXT
-    ) PRIMARY KEY (title, release_year);
+     PRIMARY KEY (title, release_year);
+     )
 """
 CREATE_TABLE_MOVIE_BY_GENRE = """
 CREATE TABLE IF NOT EXISTS movies_by_genre (
         movie_id UUID, title TEXT,
         release_year INT, genre TEXT,
         rating FLOAT, director TEXT
-    ) PRIMARY KEY (genre, rating);
+     PRIMARY KEY ((genre, movie_id), rating)
+     )WHERE CLUSTERING ORDER BY (raiting DESC)
 """
 INSERT_MOVIE_TITLE = """
 INSERT INTO movies_by_title
@@ -40,7 +42,7 @@ WHERE title = ? AND release_year = ?
 """
 DELETE_MOVIE_GENRE = """
 DELETE FROM movie_by_genre
-WHERE genre = ? AND rating = ?
+WHERE genre = ? AND rating = ? AND movie_id = ?
 """
 SELECT_BY_TITLE = """
 SELECT * FROM movies_by_title
@@ -49,7 +51,18 @@ WHERE title = ? AND release_year = ?
 
 SELECT_BY_GENRE = """
 SELECT * FROM movies_by_genre
-WHERE genre = ? AND rating = ?
+WHERE genre = ? AND rating = ? AND movie_id = ?
+"""
+UPDATE_MOVIE_DIRECTOR_TITLE = """
+UPDATE movie_by_title 
+SET director = ?
+WHERE title = ? AND release_year = ?
+
+"""
+UPDATE_MOVIE_DIRECTOR_GENRE = """
+UPDATE movie_by_genre
+SET director = ?
+WHERE genre = ? AND rating = ? AND movie_id = ?
 """
 # ==============================
 # Funciones base
@@ -76,18 +89,30 @@ def query_by_title(session, title, year):
     stmt = session.prepare(SELECT_BY_TITLE)
     rows = session.execute(stmt, (title, year))
     for r in rows:
-        print(f'Título: {r.title}\nAño de estreno: {r.release_year}\n')
+        print(f'Título: {r.title}\nAño de estreno: {r.session.execute}\n')
 
-def query_by_genre(session, genre):
-    pass  
+def query_by_genre(session, genre, rating):
+    stmt = session.prepare(SELECT_BY_GENRE) 
+    rows = session.execute(stmt,(genre, rating))  
+    for r in rows:
+        print(f'Género:{r.genre}\nRating: {r.raiting}\n')
 
-
-def update_movie_director(session, title, genre, new_director):
-    pass  
+def update_movie_director(session, title, genre, new_director, release_year, rating, movie_id):
+    title_stmt = session.prepare(UPDATE_MOVIE_DIRECTOR_TITLE) 
+    genre_stmt = session.prepare(UPDATE_MOVIE_DIRECTOR_GENRE)
+    session.execute (title_stmt,(new_director, title, release_year))
+    session.execute (genre_stmt,(new_director, genre, rating, movie_id))
+    
+      
 
 
 def delete_movie(session, title, genre, rating, release_year):
-    pass
+    title_stmt = session.prepare(DELETE_MOVIE_TITLE) 
+    genre_stmt = session.prepare(DELETE_MOVIE_GENRE)
+    session.execute(title_stmt, (title, release_year, rating))
+    session.execute(genre_stmt, (release_year, genre, rating))
+    print("Película eliminada")  
+    
 # ==============================
 # Menú
 # ==============================
