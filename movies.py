@@ -1,4 +1,5 @@
 from cassandra.cluster import Cluster
+import uuid
 
 # ==============================
 # CQL Statements
@@ -21,7 +22,11 @@ CREATE TABLE IF NOT EXISTS movies_by_genre (
         rating FLOAT, director TEXT
     ) PRIMARY KEY (genre, rating);
 """
-INSERT_MOVIE_TITLE = ""
+INSERT_MOVIE_TITLE = """
+INSERT INTO movies_by_title
+(title, release_year, director, genre, rating, movie_id)
+VALUES (?,?,?,?,?,?)
+"""
 INSERT_MOVIE_GENRE = ""
 DELETE_MOVIE_TITLE = ""
 DELETE_MOVIE_GENRE = ""
@@ -31,26 +36,45 @@ SELECT_BY_GENRE = ""
 # ==============================
 # Funciones base
 # ==============================
+
+
 def create_keyspace_and_tables(session):
-    pass  
+    session.execute(CREATE_KEYSPACE)
+    title_stmt = session.prepare(CREATE_TABLE_MOVIE_BY_TITLE)
+    session.execute(title_stmt)
+    genre_stmt = session.prepare(CREATE_TABLE_MOVIE_BY_GENRE)
+    session.execute(genre_stmt)
+
 
 def insert_movie(session, title, year, director, genre, rating):
-    pass  
+    id = uuid.uuid4()
+    title_stmt = session.prepare(INSERT_MOVIE_TITLE)
+    session.execute(title_stmt, (title, year, director, genre, rating, id))
+    genre_stmt = session.prepare(INSERT_MOVIE_GENRE)
+    session.execute(genre_stmt, (id, title, year, genre, rating, director))
+
 
 def query_by_title(session, title, year):
-    pass  
+    stmt = session.prepare(SELECT_BY_TITLE)
+    rows = session.execute(stmt, (title, year))
+    for r in rows:
+        print(f'Título: {r.title}\nAño de estreno: {r.release_year}\n')
 
 def query_by_genre(session, genre):
     pass  
 
+
 def update_movie_director(session, title, genre, new_director):
     pass  
+
 
 def delete_movie(session, title, genre, rating, release_year):
     pass
 # ==============================
 # Menú
 # ==============================
+
+
 def main():
     cluster = Cluster(['127.0.0.1'])
     session = cluster.connect()
@@ -99,6 +123,7 @@ def main():
         else:
             print("Opción inválida")
             break
+
 
 if __name__ == "__main__":
     main()
