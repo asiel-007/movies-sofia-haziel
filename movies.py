@@ -8,9 +8,19 @@ CREATE KEYSPACE IF NOT EXISTS movies
 WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};
 """
 CREATE_TABLE_MOVIE_BY_TITLE = """
-
+CREATE TABLE IF NOT EXISTS movies_by_title (
+        movie_id UUID, title TEXT,
+        release_year INT, genre TEXT,
+        rating FLOAT, director TEXT
+    ) PRIMARY KEY (title, release_year);
 """
-CREATE_TABLE_MOVIE_BY_GENRE = ""
+CREATE_TABLE_MOVIE_BY_GENRE = """
+CREATE TABLE IF NOT EXISTS movies_by_genre (
+        movie_id UUID, title TEXT,
+        release_year INT, genre TEXT,
+        rating FLOAT, director TEXT
+    ) PRIMARY KEY (genre, rating);
+"""
 INSERT_MOVIE_TITLE = ""
 INSERT_MOVIE_GENRE = ""
 DELETE_MOVIE_TITLE = ""
