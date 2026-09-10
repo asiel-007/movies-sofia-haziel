@@ -22,11 +22,30 @@ CREATE TABLE IF NOT EXISTS movies_by_genre (
     ) PRIMARY KEY (genre, rating);
 """
 INSERT_MOVIE_TITLE = ""
-INSERT_MOVIE_GENRE = ""
-DELETE_MOVIE_TITLE = ""
-DELETE_MOVIE_GENRE = ""
-SELECT_BY_TITLE = ""
-SELECT_BY_GENRE = ""
+INSERT_MOVIE_GENRE = """
+INSERT INTO movies_by_genre 
+(movie_id, title, release_year, 
+genre, rating, director)
+VALUES (?, ?, ?, ?, ?, ?)
+"""
+
+DELETE_MOVIE_TITLE = """
+DELETE FROM movies_by_title 
+WHERE title = ? AND release_year = ?
+"""
+DELETE_MOVIE_GENRE = """
+DELETE FROM movie_by_genre
+WHERE genre = ? AND rating = ?
+"""
+SELECT_BY_TITLE = """
+SELECT * FROM movies_by_title
+WHERE title = ? AND release_year = ?
+"""
+
+SELECT_BY_GENRE = """
+SELECT * FROM movies_by_genre
+WHERE genre = ? AND rating = ?
+"""
 
 # ==============================
 # Funciones base
