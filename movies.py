@@ -1,4 +1,5 @@
 from cassandra.cluster import Cluster
+from cassandra.query import BatchStatement
 import uuid
 
 # ==============================
@@ -35,20 +36,18 @@ INSERT INTO movies_by_genre
 genre, rating, director)
 VALUES (?, ?, ?, ?, ?, ?);
 """
-
 DELETE_MOVIE_TITLE = """
 DELETE FROM movies_by_title
 WHERE title = ? AND release_year = ?;
 """
 DELETE_MOVIE_GENRE = """
 DELETE FROM movies_by_genre
-WHERE genre = ? AND rating = ? AND movie_id = ?;
+WHERE genre = ? AND rating = ? AND release_year = ?;
 """
 SELECT_BY_TITLE = """
 SELECT * FROM movies_by_title
 WHERE title = ? AND release_year = ?;
 """
-
 SELECT_BY_GENRE = """
 SELECT * FROM movies_by_genre
 WHERE genre = ?;
@@ -102,17 +101,28 @@ def query_by_genre(session, genre):
 def update_movie_director(session, title, genre, release_year, rating, new_director):
     title_stmt = session.prepare(UPDATE_MOVIE_DIRECTOR_TITLE)
     genre_stmt = session.prepare(UPDATE_MOVIE_DIRECTOR_GENRE)
-    session.execute(title_stmt, (new_director, title, release_year))
-    session.execute(genre_stmt, (new_director, genre, rating, release_year))
+    # Usar batches para asegurar que ambas tablas están actualizadas
+    batch = BatchStatement()
+    batch.add(title_stmt, (new_director, title, release_year))
+    batch.add(genre_stmt, (new_director, genre, rating, release_year))
+    try:
+        session.execute(batch)
+        print("Película actualizada")
+    except Exception as e:
+        print(f"Error al actualizar la película: {e}")
 
 
 def delete_movie(session, title, genre, rating, release_year):
     title_stmt = session.prepare(DELETE_MOVIE_TITLE)
     genre_stmt = session.prepare(DELETE_MOVIE_GENRE)
-    session.execute(title_stmt, (title, release_year, rating))
-    session.execute(genre_stmt, (release_year, genre, rating))
-    print("Película eliminada")
-
+    batch = BatchStatement()
+    batch.add(title_stmt, (title, release_year))
+    batch.add(genre_stmt, (genre, rating, release_year))
+    try:
+        session.execute(batch)
+        print("Película eliminada")
+    except Exception as e:
+        print(f"Error al eliminar la película: {e}")
 # ==============================
 # Menú
 # ==============================
@@ -159,9 +169,9 @@ def main():
             # Eliminar de movie_by_title -> title, release_year
             # Eliminar de movie_by_genre -> genre, rating
             title = input("Título: ")
-            release_year = input("Año: ")
+            release_year = int(input("Año: "))
             genre = input("Género: ")
-            rating = input("Rating: ")
+            rating = float(input("Rating: "))
             delete_movie(session, title, genre, rating, release_year)
         elif choice == '0':
             # Cerrar conexión y salir
