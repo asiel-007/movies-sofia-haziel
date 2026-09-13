@@ -21,8 +21,8 @@ CREATE TABLE IF NOT EXISTS movies_by_genre (
         movie_id UUID, title TEXT,
         release_year INT, genre TEXT,
         rating FLOAT, director TEXT,
-        PRIMARY KEY (genre, rating, title)
-     ) WITH CLUSTERING ORDER BY (rating DESC, title ASC);
+        PRIMARY KEY (genre, rating, release_year)
+     ) WITH CLUSTERING ORDER BY (rating DESC, release_year DESC);
 """
 INSERT_MOVIE_TITLE = """
 INSERT INTO movies_by_title
@@ -41,7 +41,7 @@ DELETE FROM movies_by_title
 WHERE title = ? AND release_year = ?;
 """
 DELETE_MOVIE_GENRE = """
-DELETE FROM movie_by_genre
+DELETE FROM movies_by_genre
 WHERE genre = ? AND rating = ? AND movie_id = ?;
 """
 SELECT_BY_TITLE = """
@@ -54,14 +54,14 @@ SELECT * FROM movies_by_genre
 WHERE genre = ?;
 """
 UPDATE_MOVIE_DIRECTOR_TITLE = """
-UPDATE movie_by_title
+UPDATE movies_by_title
 SET director = ?
 WHERE title = ? AND release_year = ?;
 """
 UPDATE_MOVIE_DIRECTOR_GENRE = """
-UPDATE movie_by_genre
+UPDATE movies_by_genre
 SET director = ?
-WHERE genre = ? AND rating = ? AND movie_id = ?;
+WHERE genre = ? AND rating = ? AND release_year = ?;
 """
 # ==============================
 # Funciones base
@@ -89,21 +89,21 @@ def query_by_title(session, title, year):
     stmt = session.prepare(SELECT_BY_TITLE)
     rows = session.execute(stmt, (title, year))
     for r in rows:
-        print(f'Título: {r.title}\nAño de estreno: {r.release_year}\nDirector: {r.director}\nGénero: {r.genre}\nRating: {r.rating}')
+        print(f'\nTítulo: {r.title}\nAño de estreno: {r.release_year}\nDirector: {r.director}\nGénero: {r.genre}\nRating: {"{:2.1f}".format(r.rating)}')
 
 
 def query_by_genre(session, genre):
     stmt = session.prepare(SELECT_BY_GENRE)
     rows = session.execute(stmt, (genre,))
     for r in rows:
-        print(f'{r.title} - {r.rating}\n')
+        print(f'{r.title} ({r.director}) - {"{:2.1f}".format(r.rating)}\n', end='')
 
 
-def update_movie_director(session, title, genre, new_director, release_year, rating, movie_id):
+def update_movie_director(session, title, genre, release_year, rating, new_director):
     title_stmt = session.prepare(UPDATE_MOVIE_DIRECTOR_TITLE)
     genre_stmt = session.prepare(UPDATE_MOVIE_DIRECTOR_GENRE)
     session.execute(title_stmt, (new_director, title, release_year))
-    session.execute(genre_stmt, (new_director, genre, rating, movie_id))
+    session.execute(genre_stmt, (new_director, genre, rating, release_year))
 
 
 def delete_movie(session, title, genre, rating, release_year):
@@ -130,6 +130,7 @@ def main():
         print("2. Consultar por título")
         print("3. Consultar por género")
         print("4. Actualizar director")
+        print("5. Eliminar película")
         print("0. Salir")
         choice = input("Seleccione opción: ")
 
@@ -149,16 +150,18 @@ def main():
             query_by_genre(session, genre)
         elif choice == "4":
             title = input("Título: ")
+            release_year = int(input("Año: "))
             genre = input("Género: ")
+            rating = float(input("Rating: "))
             new_director = input("Nuevo Director: ")
-            # update_movie_director(session, title, genre, new_director)
+            update_movie_director(session, title, genre, release_year, rating, new_director)
         elif choice == "5":
             # Eliminar de movie_by_title -> title, release_year
             # Eliminar de movie_by_genre -> genre, rating
             title = input("Título: ")
+            release_year = input("Año: ")
             genre = input("Género: ")
             rating = input("Rating: ")
-            release_year = input("Año: ")
             delete_movie(session, title, genre, rating, release_year)
         elif choice == '0':
             # Cerrar conexión y salir
