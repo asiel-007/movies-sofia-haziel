@@ -87,15 +87,20 @@ def insert_movie(session, title, year, director, genre, rating):
 def query_by_title(session, title, year):
     stmt = session.prepare(SELECT_BY_TITLE)
     rows = session.execute(stmt, (title, year))
-    for r in rows:
-        print(f'\nTítulo: {r.title}\nAño de estreno: {r.release_year}\nDirector: {r.director}\nGénero: {r.genre}\nRating: {"{:2.1f}".format(r.rating)}')
+    if rows:
+        print(f'\nTítulo: {rows.one().title}\nAño de estreno: {rows.one().release_year}\nDirector: {rows.one().director}\nGénero: {rows.one().genre}\nRating: {"{:2.1f}".format(rows.one().rating)}')
+    else:
+        print("No se encontró la película")
 
 
 def query_by_genre(session, genre):
     stmt = session.prepare(SELECT_BY_GENRE)
     rows = session.execute(stmt, (genre,))
-    for r in rows:
-        print(f'{r.title} ({r.director}) - {"{:2.1f}".format(r.rating)}\n', end='')
+    if rows:
+        for r in rows:
+            print(f'{r.title} ({r.director}) - {"{:2.1f}".format(r.rating)}\n', end='')
+    else:
+        print("No se encontraron películas")
 
 
 def update_movie_director(session, title, genre, release_year, rating, new_director):
