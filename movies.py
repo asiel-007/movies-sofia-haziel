@@ -128,6 +128,7 @@ def delete_movie(session, title, genre, rating, release_year):
         print("Película eliminada")
     except Exception as e:
         print(f"Error al eliminar la película: {e}")
+        
 # ==============================
 # Menú
 # ==============================
